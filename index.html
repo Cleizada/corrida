@@ -68,6 +68,10 @@ a{color:#8ab4ff}
   <div class="field"><label for="valor">Valor da corrida (R$)</label><input id="valor" type="number" inputmode="decimal" step="0.01" placeholder="0,00"></div>
   <div class="field"><label for="km">Distância total (km)</label><input id="km" type="number" inputmode="decimal" step="0.1" placeholder="0,0"></div>
 </div>
+<div class="field" style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+  <div><label for="taxa">Taxa da plataforma (%)</label><div style="font-size:11px;color:var(--mut)">Descontada do valor da corrida</div></div>
+  <input id="taxa" type="number" inputmode="decimal" step="0.1" placeholder="0" style="width:90px;text-align:right">
+</div>
 <div class="chips"><span id="cTempo">Tempo: –</span><span id="cCusto">Custo: –</span><span id="cBruto">Bruto/km: –</span></div>
 
 <section class="card">
@@ -91,11 +95,8 @@ a{color:#8ab4ff}
     <div><label>Mín. lucro por km (R$)</label><input id="minKm" type="number" inputmode="decimal" step="0.1"></div>
     <div><label>Mín. lucro por corrida (R$)</label><input id="minCorrida" type="number" inputmode="decimal" step="0.1"></div>
   </div>
-  <label>Taxa da plataforma (% e/ou R$ fixo por corrida)</label>
-  <div class="row">
-    <input id="taxa" type="number" inputmode="decimal" step="0.1" placeholder="%">
-    <input id="fixo" type="number" inputmode="decimal" step="0.01" placeholder="R$ fixo">
-  </div>
+  <label>Taxa fixa da plataforma por corrida (R$) — além do % da tela principal</label>
+  <input id="fixo" type="number" inputmode="decimal" step="0.01" placeholder="0,00">
   <div class="note">Segundo o site oficial do iFood Entregadores, a plataforma não desconta taxa do entregador: o valor do app é o que você recebe. Por isso o padrão é 0%. Use o campo se seu extrato mostrar descontos ou para reservar imposto/MEI. Veja em <a href="https://entregador.ifood.com.br">entregador.ifood.com.br</a>.</div>
   <label>Velocidade média (km/h) — para estimar o tempo</label>
   <input id="vel" type="number" inputmode="decimal" step="1">
