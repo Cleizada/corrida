@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#111418">
+<title>Vale a Corrida?</title>
+<style>
+:root{--bg:#111418;--card:#1b2027;--tx:#f2f4f7;--mut:#8b95a3;--ok:#22c55e;--no:#ef4444;--mid:#f59e0b}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.4 -apple-system,system-ui,Segoe UI,Roboto,sans-serif;padding:env(safe-area-inset-top) 14px calc(24px + env(safe-area-inset-bottom))}
+h1{font-size:18px;margin:14px 0 10px}
+.card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:12px}
+label{display:block;font-size:12px;color:var(--mut);margin:8px 0 3px}
+input,select{width:100%;padding:14px;border-radius:10px;border:1px solid #2c3440;background:#0f1216;color:var(--tx);font-size:22px;font-weight:700}
+select{font-size:16px;font-weight:500}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.verdict{text-align:center;border-radius:16px;padding:18px 10px;margin-bottom:12px;font-size:34px;font-weight:900;background:#2c3440;color:var(--mut)}
+.v-ok{background:var(--ok);color:#04230f}.v-no{background:var(--no);color:#fff}.v-mid{background:var(--mid);color:#2b1b00}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.k{background:var(--card);border-radius:12px;padding:10px}
+.k small{color:var(--mut);font-size:12px;display:block}.k b{font-size:24px}
+.big b{font-size:30px}
+.note{font-size:12px;color:var(--mut);margin-top:8px}
+details summary{font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<h1>🛵 Vale a Corrida?</h1>
+
+<div class="card">
+  <div class="row">
+    <div><label>Valor (R$)</label><input id="valor" type="number" inputmode="decimal" step="0.01" placeholder="8.50"></div>
+    <div><label>KM total</label><input id="km" type="number" inputmode="decimal" step="0.1" placeholder="5.5"></div>
+  </div>
+</div>
+
+<div class="verdict" id="verdict">Preencha valor e km</div>
+<div class="grid">
+  <div class="k big"><small>Lucro líquido</small><b id="rLucro">–</b></div>
+  <div class="k big"><small>Lucro por km</small><b id="rLkm">–</b></div>
+  <div class="k"><small>Custo estimado</small><b id="rCusto">–</b></div>
+  <div class="k"><small>Tempo estimado</small><b id="rMin">–</b></div>
+</div>
+<div class="card" style="margin-top:12px">
+  <b>🧾 Discriminação</b>
+  <table id="disc" style="width:100%;margin-top:6px;border-collapse:collapse"></table>
+  <div class="note" id="detalhe"></div>
+</div>
+
+<details class="card" style="margin-top:12px">
+  <summary>⚙️ Veículo e regras</summary>
+  <label>Modelo do veículo</label>
+  <select id="modelo"></select>
+  <div class="row">
+    <div><label>Consumo (km/l)</label><input id="consumo" type="number" inputmode="decimal" step="0.1"></div>
+    <div><label>Combustível (R$/l)</label><input id="preco" type="number" inputmode="decimal" step="0.01"></div>
+  </div>
+  <label>Desgaste/manutenção (R$/km)</label>
+  <input id="desgaste" type="number" inputmode="decimal" step="0.01">
+  <div class="row">
+    <div><label>Mín. lucro por km (R$)</label><input id="minKm" type="number" inputmode="decimal" step="0.1"></div>
+    <div><label>Mín. lucro por corrida (R$)</label><input id="minCorrida" type="number" inputmode="decimal" step="0.1"></div>
+  </div>
+  <label>Taxa da plataforma (% do valor da corrida)</label>
+  <div class="row">
+    <input id="taxa" type="number" inputmode="decimal" step="0.1" placeholder="0">
+    <input id="fixo" type="number" inputmode="decimal" step="0.01" placeholder="R$ fixo/corrida">
+  </div>
+  <div class="note">Segundo o site oficial do iFood Entregadores, a plataforma não desconta taxa do entregador: o valor mostrado no app é o que você recebe. Por isso o padrão é 0%. Se o seu extrato mostrar descontos (ou você quiser reservar para impostos/MEI), informe aqui. Confira em <a href="https://entregador.ifood.com.br" style="color:#8ab4ff">entregador.ifood.com.br</a>.</div>
+  <label>Velocidade média (km/h) — para estimar o tempo</label>
+  <input id="vel" type="number" inputmode="decimal" step="1">
+  <div class="note">Use o KM total que o app do iFood mostra (coleta + entrega). Deixe 0 no critério que não quiser. Consumos por modelo são médias — ajuste ao seu uso.</div>
+</details>
+
+<script>
+const $=id=>document.getElementById(id);
+const MODELOS={"Honda CG 160":40,"Honda CG 125":42,"Honda Biz 125":45,"Honda Pop 110i":50,"Honda Bros 160":38,"Yamaha Factor 150":40,"Yamaha XTZ Crosser 150":38,"Yamaha Fazer 250":28,"Yamaha Lander 250":30,"Carro 1.0":12,"Carro 1.4–1.6":10,"Bicicleta / elétrica":0,"Outro (manual)":35};
+const DEF={modelo:"Honda CG 160",consumo:40,preco:6.20,desgaste:0.10,minKm:1.5,minCorrida:4,vel:25,taxa:0,fixo:0};
+let S;try{S={...DEF,...JSON.parse(localStorage.getItem("vc")||"{}")}}catch(e){S={...DEF}}
+const save=()=>{try{localStorage.setItem("vc",JSON.stringify(S))}catch(e){}};
+for(const m in MODELOS){const o=document.createElement("option");o.textContent=m;$("modelo").appendChild(o)}
+["modelo","consumo","preco","desgaste","minKm","minCorrida","vel","taxa","fixo"].forEach(k=>$(k).value=S[k]);
+$("modelo").onchange=()=>{S.modelo=$("modelo").value;S.consumo=MODELOS[S.modelo];$("consumo").value=S.consumo;save();calc()};
+["consumo","preco","desgaste","minKm","minCorrida","vel","taxa","fixo"].forEach(k=>$(k).oninput=()=>{S[k]=parseFloat($(k).value)||0;save();calc()});
+
+const brl=v=>"R$ "+v.toFixed(2).replace(".",",");
+function calc(){
+  const valor=parseFloat($("valor").value),km=parseFloat($("km").value);
+  const v=$("verdict");
+  if(!(valor>0)||!(km>0)){v.className="verdict";v.textContent="Preencha valor e km";
+    ["rLucro","rLkm","rCusto","rMin"].forEach(i=>$(i).textContent="–");$("detalhe").textContent="";$("disc").innerHTML="";return}
+  const comb=S.consumo>0?km/S.consumo*S.preco:0, des=km*S.desgaste, custo=comb+des;
+  const tx=valor*S.taxa/100+S.fixo;
+  const lucro=valor-tx-custo, lkm=lucro/km;
+  const linha=(a,b,c)=>`<tr style="${c||''}"><td style="padding:3px 0;color:var(--mut)">${a}</td><td style="text-align:right">${b}</td></tr>`;
+  $("disc").innerHTML=linha("Valor da corrida",brl(valor))+linha("− Taxa da plataforma"+(S.taxa?` (${S.taxa}%)`:""),brl(tx))+linha("− Combustível",brl(comb))+linha("− Desgaste/manutenção",brl(des))+linha("= Lucro líquido",brl(lucro),"font-weight:800;border-top:1px solid #2c3440");
+  const okKm=S.minKm<=0||lkm>=S.minKm, okC=S.minCorrida<=0||lucro>=S.minCorrida;
+  if(okKm&&okC){v.className="verdict v-ok";v.textContent="✅ ACEITAR"}
+  else if(lucro>0&&(S.minKm<=0||lkm>=S.minKm*.85)&&(S.minCorrida<=0||lucro>=S.minCorrida*.85)){v.className="verdict v-mid";v.textContent="⚠️ NO LIMITE"}
+  else{v.className="verdict v-no";v.textContent="❌ RECUSAR"}
+  $("rLucro").textContent=brl(lucro);$("rLkm").textContent=brl(lkm)+"/km";$("rCusto").textContent=brl(custo);
+  $("rMin").textContent=S.vel>0?Math.round(km/S.vel*60)+" min":"–";
+  $("detalhe").textContent=`Bruto por km: ${brl(valor/km)}`;
+}
+["valor","km"].forEach(i=>$(i).oninput=calc);
+</script>
+</body>
+</html>
